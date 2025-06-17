@@ -74,6 +74,15 @@ const router = createRouter({
       component: () => import('@/views/employee/EmployeeDashboard.vue'),
       meta: { requiresAuth: true, role: 'empleado' },
     },
+    {
+      path: '/empleado/agenda',
+      name: 'EmployeeAgenda',
+      component: () => import('@/views/employee/EmployeeAgenda.vue'),
+      meta: {
+        requiresAuth: true,
+        role: 'empleado'
+      }
+    },
   ],
 });
 

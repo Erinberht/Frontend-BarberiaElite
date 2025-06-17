@@ -1,8 +1,19 @@
 <template>
   <div>
     <div class="mb-8">
-      <h1>Mi Agenda - {{ currentUser?.nombre }}</h1>
-      <p class="text-gray-600 mt-2">Gestiona tus citas del día</p>
+      <div class="flex justify-between items-center">
+        <div>
+          <h1>Mi Agenda - {{ currentUser?.nombre }}</h1>
+          <p class="text-gray-600 mt-2">Gestiona tus citas del día</p>
+        </div>
+        <router-link 
+          to="/empleado/agenda" 
+          class="btn-primary flex items-center"
+        >
+          <CalendarDaysIcon class="w-5 h-5 mr-2" />
+          Gestionar Horarios
+        </router-link>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
