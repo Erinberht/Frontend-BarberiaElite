@@ -58,17 +58,26 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <div class="card">
         <h2 class="mb-4">Citas Recientes</h2>
-        <div class="space-y-4">
+        <div v-if="loading" class="flex justify-center items-center py-8">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        </div>
+        <div v-else-if="error" class="text-red-600 text-center py-4">
+          {{ error }}
+        </div>
+        <div v-else class="space-y-4">
           <div v-for="cita in citasRecientes" :key="cita.id" 
                class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div>
-              <p class="font-medium text-gray-900">{{ getClienteName(cita.clienteId) }}</p>
+              <p class="font-medium text-gray-900">{{ getClienteName(cita) }}</p>
               <p class="text-sm text-gray-500">{{ formatDate(cita.fecha) }}</p>
             </div>
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
                   :class="getStatusClasses(cita.estado)">
               {{ getStatusLabel(cita.estado) }}
             </span>
+          </div>
+          <div v-if="citasRecientes.length === 0" class="text-gray-500 text-center py-4">
+            No hay citas registradas
           </div>
         </div>
       </div>
@@ -109,8 +118,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { servicios, empleados, especialidades, citas, clientes, users } from '@/data/mockData';
+import { ref, computed, onMounted } from 'vue';
+import api from '@/composables/api';
 import { 
   ScissorsIcon, 
   UserGroupIcon, 
@@ -118,21 +127,89 @@ import {
   CalendarDaysIcon
 } from '@heroicons/vue/24/outline';
 
+// Estados reactivos para los datos
+const servicios = ref<any[]>([]);
+const empleados = ref<any[]>([]);
+const especialidades = ref<any[]>([]);
+const citas = ref<any[]>([]);
+const loading = ref(true);
+const error = ref('');
+
+// Obtener fecha actual
 const today = new Date().toISOString().split('T')[0];
 
+// Computadas
 const citasHoy = computed(() => 
-  citas.filter(cita => cita.fecha === today)
+  citas.value.filter(cita => cita.fecha === today)
 );
 
 const citasRecientes = computed(() => 
-  citas.slice(0, 5)
+  citas.value.slice(0, 5)
 );
 
-const getClienteName = (clienteId: string) => {
-  const cliente = clientes.find(c => c.id === clienteId);
-  if (cliente) {
-    const user = users.find(u => u.id === cliente.usuarioId);
-    return user?.nombre || 'Cliente';
+// Funciones para cargar datos
+const fetchServicios = async () => {
+  try {
+    const response = await api.get('/servicios');
+    servicios.value = Array.isArray(response.data) ? response.data : [];
+  } catch (err) {
+    console.error('Error al cargar servicios:', err);
+  }
+};
+
+const fetchEmpleados = async () => {
+  try {
+    const response = await api.get('/empleados');
+    empleados.value = Array.isArray(response.data) ? response.data : [];
+  } catch (err) {
+    console.error('Error al cargar empleados:', err);
+  }
+};
+
+const fetchEspecialidades = async () => {
+  try {
+    const response = await api.get('/especialidades');
+    especialidades.value = Array.isArray(response.data) ? response.data : [];
+  } catch (err) {
+    console.error('Error al cargar especialidades:', err);
+  }
+};
+
+const fetchCitas = async () => {
+  try {
+    const response = await api.get('/citas');
+    citas.value = Array.isArray(response.data) ? response.data : [];
+  } catch (err) {
+    console.error('Error al cargar citas:', err);
+    error.value = 'Error al cargar las citas';
+  }
+};
+
+// Función para cargar todos los datos
+const loadDashboardData = async () => {
+  try {
+    loading.value = true;
+    error.value = '';
+    
+    // Cargar todos los datos en paralelo
+    await Promise.all([
+      fetchServicios(),
+      fetchEmpleados(),
+      fetchEspecialidades(),
+      fetchCitas()
+    ]);
+  } catch (err) {
+    console.error('Error al cargar datos del dashboard:', err);
+    error.value = 'Error al cargar los datos del dashboard';
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Funciones de utilidad
+const getClienteName = (cita: any) => {
+  if (cita.cliente?.usuario?.nombre) {
+    return cita.cliente.usuario.nombre;
   }
   return 'Cliente';
 };
@@ -174,4 +251,9 @@ const getStatusLabel = (status: string) => {
       return status;
   }
 };
+
+// Cargar datos al montar el componente
+onMounted(() => {
+  loadDashboardData();
+});
 </script>

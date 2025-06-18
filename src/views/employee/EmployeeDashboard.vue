@@ -235,7 +235,9 @@ const estadisticasMes = computed(() => {
   const currentYear = new Date().getFullYear();
   
   const citasMes = todasLasCitas.value.filter(cita => {
-    const citaDate = new Date(cita.fecha);
+    // Crear fecha local evitando problema de zona horaria
+    const [year, month, day] = cita.fecha.split('-');
+    const citaDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
     return citaDate.getMonth() === currentMonth && 
            citaDate.getFullYear() === currentYear &&
            cita.estado === 'completada';
@@ -262,7 +264,10 @@ const getTotalPrice = (servicios: any[]) => {
 };
 
 const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('es-ES', {
+  // Crear fecha local evitando el problema de zona horaria
+  const [year, month, day] = date.split('-');
+  const localDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  return localDate.toLocaleDateString('es-ES', {
     day: 'numeric',
     month: 'long',
     year: 'numeric'
